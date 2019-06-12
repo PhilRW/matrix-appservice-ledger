@@ -7,6 +7,7 @@ import requests
 import waitress
 import yaml
 from matrix_client.api import MatrixHttpApi
+from matrix_client.errors import MatrixRequestError
 
 CONFIG_DIR = os.environ.get("MATRIX_APPSERVICE_LEDGER_CONFIG_DIR", "../config/")
 CONFIG_FILE = os.environ.get("MATRIX_APPSERVICE_LEDGER_CONFIG_FILE", "ledger-registration.yaml")
@@ -64,35 +65,41 @@ def on_receive_events(txn_id):
                     matrix.join_room(room_id)
                     data = message_event(message)
                 elif body.startswith('!sh '):
-                    command = content['body'][4:]
-                    try:
-                        result = shell(command)
-                        data = message_event(result, f"<pre>{result}</pre>")
-                    except subprocess.CalledProcessError as cpe:
-                        logger.warning(cpe)
-                        data = message_event(f"command failed: {cpe}")
-                    except subprocess.TimeoutExpired as te:
-                        logger.warning(te)
-                        data = message_event(f"command timed out: {te}")
+                    data = run_local_command('!sh ', body)
                 elif body.startswith('!ledger '):
-                    ledger_command = content['body'][8:]
-                    try:
-                        result = shell(ledger_command)
-                        data = message_event(result, f"<pre>{result}</pre>")
-                    except subprocess.CalledProcessError as cpe:
-                        logger.warning(cpe)
-                        data = message_event(f"command failed: {cpe}")
-                    except subprocess.TimeoutExpired as te:
-                        logger.warning(te)
-                        data = message_event(f"command timed out: {te}")
+                    data = run_local_command('!ledger ', body, keep_prefix=True)
                 if data:
-                    matrix.send_message_event(room_id, "m.room.message", data)
+                    safe_send_message(room_id, data)
             else:
-                matrix.send_message(room_id,
-                                    "I'm sorry, but this is not a private room so I'm not going to do that.")
+                safe_send_message(room_id, message_event(
+                    "I'm sorry, but this is not a private room so I'm not going to do that."))
         logger.debug("------------------------------------------------------------------")
 
     return flask.jsonify({})
+
+
+def safe_send_message(room_id: str, data: dict):
+    try:
+        matrix.send_message_event(room_id, "m.room.message", data)
+    except (MatrixRequestError, ConnectionError) as e:
+        logger.error(e)
+
+
+def run_local_command(prefix: str, body: str, keep_prefix:bool = False) -> dict:
+    command = body[len(prefix):]
+    if keep_prefix:
+        command = prefix[1:] + command
+    try:
+        result = shell(command)
+        data = message_event(result, f"<pre>{result}</pre>")
+    except subprocess.CalledProcessError as cpe:
+        logger.warning(cpe)
+        data = message_event(f"command failed: {cpe}")
+    except subprocess.TimeoutExpired as te:
+        logger.warning(te)
+        data = message_event(f"command timed out: {te}")
+
+    return data
 
 
 def message_event(body, formatted_body=None) -> dict:
@@ -119,7 +126,12 @@ def shell(command) -> str:
 def get_joined_room_members(room_id) -> dict:
     url = f"{HS_URL}/_matrix/client/r0/rooms/{room_id}/joined_members?access_token={AS_TOKEN}"
     get = requests.get(url)
-    return get.json()['joined']
+    val = None
+    try:
+        val = get.json()['joined']
+    except KeyError as ke:
+        logger.exception(ke)
+    return val
 
 
 if __name__ == "__main__":
