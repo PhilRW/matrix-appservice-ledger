@@ -34,7 +34,7 @@ with open(CONFIG_PATH, 'r') as stream:
 
 app = flask.Flask(__name__)
 matrix = MatrixHttpApi(HS_URL, token=AS_TOKEN)
-matrix.sync()
+# matrix.sync()
 
 
 @app.route("/transactions/<txn_id>", methods=["PUT"])
@@ -44,7 +44,7 @@ def on_receive_events(txn_id):
         logger.info(f"User: {event['user_id']} Room: {event['room_id']}")
         logger.info(f"Event Type: {event['type']}")
         logger.info(f"Content: {event['content']}")
-        logger.info(f"Room has {len(matrix.get_room_members(event['room_id']))} members in it.")
+        # logger.info(f"Room has {len(matrix.get_room_members(event['room_id']))} members in it.")
     return flask.jsonify({})
 
 
@@ -64,3 +64,4 @@ def shell(command) -> bytes:
 
 if __name__ == "__main__":
     app.run("0.0.0.0")
+    # matrix.get_room_members("#superior:matrix.rosenberg-watt.com")
