@@ -1,0 +1,4 @@
+flask
+pyyaml
+matrix_client
+requests
