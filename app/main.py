@@ -34,6 +34,7 @@ with open(CONFIG_PATH, 'r') as stream:
 
 app = flask.Flask(__name__)
 matrix = MatrixHttpApi(HS_URL, token=AS_TOKEN)
+matrix.sync()
 
 
 @app.route("/transactions/<txn_id>", methods=["PUT"])
