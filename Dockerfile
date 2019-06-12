@@ -11,7 +11,7 @@ RUN cd ledger && ./acprep update
 
 RUN apt-get install -y python3 python3-pip
 COPY install/requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 WORKDIR /app
 COPY app/ .
