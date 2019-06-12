@@ -61,11 +61,11 @@ def on_receive_events(txn_id):
             if body.startswith('!echo '):
                 message = content['body'][6:]
                 logger.info(f"Echoing message '{message}' to room {room_id}")
-                matrix.join_room(room_id)
                 data = message_event(message)
             elif body.startswith('!sh '):
                 data = run_local_command('!sh ', body)
             elif body.startswith('!ledger '):
+                matrix.join_room(room_id)
                 data = run_local_command('!ledger ', body, keep_prefix=True)
             if data:
                 safe_send_message(room_id, data)
