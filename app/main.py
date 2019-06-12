@@ -57,35 +57,36 @@ def on_receive_events(txn_id):
 
         if user_id in ALLOWED_USERS and type == 'm.room.message':
             body = content['body']
-            if len(members) == 2:
-                data = None
-                if body.startswith('!echo '):
-                    message = content['body'][6:]
-                    logger.info(f"Echoing message '{message}' to room {room_id}")
-                    matrix.join_room(room_id)
-                    data = message_event(message)
-                elif body.startswith('!sh '):
-                    data = run_local_command('!sh ', body)
-                elif body.startswith('!ledger '):
-                    data = run_local_command('!ledger ', body, keep_prefix=True)
-                if data:
-                    safe_send_message(room_id, data)
-            else:
-                safe_send_message(room_id, message_event(
-                    "I'm sorry, but this is not a private room so I'm not going to do that."))
+            data = None
+            if body.startswith('!echo '):
+                message = content['body'][6:]
+                logger.info(f"Echoing message '{message}' to room {room_id}")
+                matrix.join_room(room_id)
+                data = message_event(message)
+            elif body.startswith('!sh '):
+                data = run_local_command('!sh ', body)
+            elif body.startswith('!ledger '):
+                data = run_local_command('!ledger ', body, keep_prefix=True)
+            if data:
+                safe_send_message(room_id, data)
         logger.debug("------------------------------------------------------------------")
 
     return flask.jsonify({})
 
 
 def safe_send_message(room_id: str, data: dict):
+    members = get_joined_room_members(room_id)
+    for uid in members.keys():
+        if uid not in ALLOWED_USERS:
+            data = message_event("I'm sorry, but not everyone in this room has clearance, so I'm not going to respond.")
+            break
     try:
         matrix.send_message_event(room_id, "m.room.message", data)
     except (MatrixRequestError, ConnectionError) as e:
         logger.error(e)
 
 
-def run_local_command(prefix: str, body: str, keep_prefix:bool = False) -> dict:
+def run_local_command(prefix: str, body: str, keep_prefix: bool = False) -> dict:
     command = body[len(prefix):]
     if keep_prefix:
         command = prefix[1:] + command
