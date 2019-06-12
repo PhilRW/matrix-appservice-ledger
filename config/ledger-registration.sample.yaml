@@ -1,11 +1,13 @@
 # ledger-registration.yaml
+
+# The URL of your homeserver
 hs_url: "http://your-homeserver.com:8008"
 
 # An ID which is unique across all application services on your homeserver. This should never be changed once set.
 id: "appservice-ledger"
 
 # this is the base URL of the application service
-url: "http://appservice-ledger:5000"
+url: "http://appservice-ledger:8080"
 
 # This is the token that the AS should use as its access_token when using the Client-Server API
 # This can be anything you want.
@@ -22,7 +24,7 @@ sender_localpart: ledger
 namespaces:
   users:
     - exclusive: false
-      regex: "@somebody:your-homeserver.com"
+      regex: "@sombeody:your-homeserver.com"
     - exclusive: false
       regex: "@somebodyelse:your-homeserver.com"
   rooms: []
