@@ -5,7 +5,6 @@ import signal
 import subprocess
 import threading
 import time
-from time import sleep
 
 from matrix_client.client import MatrixClient
 from matrix_client.errors import MatrixError
@@ -68,7 +67,7 @@ class MatrixBotLedger(threading.Thread):
         except MatrixError as me:
             if not self.kill_event.is_set():
                 logger.warning(f"connection to {self.homeserver} failed, retrying in 5 seconds... ({me})")
-                sleep(5)
+                time.sleep(5)
                 self.connect()
 
     def listener_exception_handler(self, e):
