@@ -8,14 +8,14 @@ Add this to your matrix services `docker-compose.yaml`:
 ```yaml
   appservice-ledger:
     image: philrw/matrix-appservice-ledger
-    build:
-      context: ./matrix-appservice-ledger
     restart: unless-stopped
-    volumes:
-      - ./matrix-appservice-ledger/config:/data
-      - /mnt/data/ledger:/ledger:ro
     environment:
-      - "MATRIX_APPSERVICE_LEDGER_USERS=@somebody:your-homeserver.com"
+      - "HOMESERVER=https://matrix.example.com"
+      - "USERNAME=@ledger:matrix.example.com"
+      - "PASSWORD=12345"
+      - "ALLOWED_USERS=@somebody:matrix.example.com,@somebody-else:matrix.example.com"
       - "LEDGER_FILE=/ledger/finances.ledger"
       - "LEDGER_PRICE_DB=/ledger/price-db.ledger"
+    volumes:
+      - /mnt/data/ledger:/ledger:ro # wherever your LEGER_FILE and/or LEDGER_PRICE_DB are located
 ```

@@ -22,4 +22,4 @@ COPY app/ .
 
 VOLUME [ "/data", "/ledger" ]
 
-ENTRYPOINT [ "waitress-serve", "main:app" ]
+ENTRYPOINT [ "python3", "client.py" ]
