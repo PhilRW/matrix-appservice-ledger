@@ -1,8 +1,6 @@
 FROM ubuntu
 
 ENV DEBIAN_FRONTEND "noninteractive"
-ENV MATRIX_APPSERVICE_LEDGER_CONFIG_DIR "/data"
-ENV MATRIX_APPSERVICE_LEDGER_CONFIG_FILE "ledger-registration.yaml"
 
 WORKDIR /usr/src
 RUN apt-get update
@@ -20,6 +18,6 @@ COPY install/requirements.txt .
 RUN pip3 install -r requirements.txt
 COPY app/ .
 
-VOLUME [ "/data", "/ledger" ]
+VOLUME [ "/ledger" ]
 
 ENTRYPOINT [ "python3", "client.py" ]

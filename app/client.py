@@ -12,7 +12,7 @@ from matrix_client.errors import MatrixError
 from matrix_client.room import Room
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
-SH_TIMEOUT = int(os.environ.get("SH_TIMEOUT", "13"))
+SH_TIMEOUT = int(os.environ.get("SH_TIMEOUT", "8"))
 
 logger = logging.getLogger(__name__)
 
