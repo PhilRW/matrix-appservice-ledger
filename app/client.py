@@ -22,22 +22,26 @@ logging.basicConfig(
 )
 
 
-class TinyMatrixBot(threading.Thread):
+class MatrixBotLedger(threading.Thread):
 
-    def __init__(self, args, kill_event: threading.Event):
+    def __init__(
+            self,
+            homeserver: str,
+            username: str,
+            password: str,
+            allowed_users: str,
+            kill_event: threading.Event):
         super().__init__()
         logger.debug("__init__()")
 
-        self.args = args
-
-        self.allowed_users = args.allowed_users.split(',')
-        self.homeserver = args.homeserver
+        self.allowed_users = allowed_users.split(',')
+        self.homeserver = homeserver
         self.kill_event = kill_event
-        self.password = args.password
+        self.password = password
         self.sh_timeout = SH_TIMEOUT
-        self.username = args.username
+        self.username = username
 
-        self.client = MatrixClient(args.homeserver)
+        self.client = MatrixClient(self.homeserver)
         self.allowed_users.append(self.username)
         logger.debug(f"allowed users: {self.allowed_users}")
 
@@ -86,18 +90,19 @@ class TinyMatrixBot(threading.Thread):
     def join_room(self, room_id):
         logger.info(f"join_room({room_id})")
 
-        _room = self.client.join_room(room_id)
-        _room.add_listener(self.on_room_event)
+        room = self.client.join_room(room_id)
+        room.add_listener(self.on_room_event)
 
+    # TODO: debug this
     def on_leave(self, room_id, state):
         logger.debug(f"on_leave({room_id}, {state})")
 
-        _sender = "someone"
-        for _event in state["timeline"]["events"]:
-            if not _event["membership"]:
+        sender = "someone"
+        for event in state["timeline"]["events"]:
+            if not event["membership"]:
                 continue
-            _sender = _event["sender"]
-        logger.info(f"kicked from {room_id} by {_sender}")
+            sender = event["sender"]
+        logger.info(f"kicked from {room_id} by {sender}")
 
     def on_room_event(self, room, event):
         logger.debug(f"on_room_event({room}, {event}")
@@ -175,15 +180,32 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, on_signal)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("homeserver", help="https://matrix.example.com", default=os.environ.get("HOMESERVER", None))
-    parser.add_argument("username", help="@ledger:matrix.example.com", default=os.environ.get("USERNAME", None))
-    parser.add_argument("password", default=os.environ.get("PASSWORD", None))
-    parser.add_argument("allowed_users", help="@user1:matrix.example.com,@user2.matrix.example.com", default=os.environ.get("ALLOWED_USERS", None))
+    parser.add_argument("-s", "--homeserver",
+                        help="https://matrix.example.com",
+                        default=os.environ.get("HOMESERVER"))
+    parser.add_argument("-u", "--username",
+                        help="@ledger:matrix.example.com",
+                        default=os.environ.get("USERNAME"))
+    parser.add_argument("-p", "--password",
+                        default=os.environ.get("PASSWORD"))
+    parser.add_argument("-al", "--allowed_users",
+                        help="@user1:matrix.example.com,@user2.matrix.example.com",
+                        default=os.environ.get("ALLOWED_USERS"))
 
     args = parser.parse_args()
+    if not args.homeserver \
+            or not args.username \
+            or not args.password \
+            or not args.allowed_users:
+        parser.print_usage()
+        exit(1)
 
-    tmb = TinyMatrixBot(args, kill_event)
-    tmb.start()
+    mbl = MatrixBotLedger(args.homeserver,
+                          args.username,
+                          args.password,
+                          args.allowed_users,
+                          kill_event)
+    mbl.start()
 
     try:
         while not kill_event.is_set():
@@ -192,6 +214,6 @@ if __name__ == "__main__":
         logger.info("Ctrl-C caught, attempting to close threads.")
 
         kill_event.set()
-        tmb.join()
+        mbl.join()
 
         logger.info("Quitting app.")
