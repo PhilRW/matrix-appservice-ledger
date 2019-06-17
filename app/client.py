@@ -103,7 +103,7 @@ class MatrixBotLedger(threading.Thread):
             sender = event["sender"]
         logger.info(f"kicked from {room_id} by {sender}")
 
-    def on_room_event(self, room, event):
+    def on_room_event(self, room: Room, event):
         logger.debug(f"on_room_event({room}, {event}")
 
         if event["sender"] == self.client.user_id:
