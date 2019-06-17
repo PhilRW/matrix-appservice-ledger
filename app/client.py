@@ -61,11 +61,11 @@ class MatrixBotLedger(threading.Thread):
         self.client.logout()
 
     def connect(self):
-        try:
-            self.client.login(username=self.username, password=self.password, limit=0)
-            logger.info(f"connected to {self.homeserver}")
-        except MatrixError as me:
-            if not self.kill_event.is_set():
+        if not self.kill_event.is_set():
+            try:
+                self.client.login(username=self.username, password=self.password, limit=0)
+                logger.info(f"connected to {self.homeserver}")
+            except MatrixError as me:
                 logger.warning(f"connection to {self.homeserver} failed, retrying in 5 seconds... ({me})")
                 time.sleep(5)
                 self.connect()
@@ -106,14 +106,14 @@ class MatrixBotLedger(threading.Thread):
     def on_room_event(self, room: Room, event):
         logger.debug(f"on_room_event({room}, {event}")
 
-        if event["sender"] == self.client.user_id:
+        if event["sender"] == self.client.user_id \
+                or event["type"] != "m.room.message" \
+                or event["content"]["msgtype"] != "m.text":
             return
-        if event["type"] != "m.room.message":
-            return
-        if event["content"]["msgtype"] != "m.text":
-            return
+
         content_body = event["content"]["body"]
         body, html = None, None
+
         if content_body.startswith('!echo '):
             message = content_body[6:]
             logger.info(f"Echoing message '{message}' to room {room}")
@@ -122,6 +122,7 @@ class MatrixBotLedger(threading.Thread):
             body, html = self.run_local_command('!sh ', content_body)
         elif content_body.startswith('!ledger '):
             body, html = self.run_local_command('!ledger ', content_body, keep_prefix=True)
+
         if body:
             self.safe_send_message(room, body, html)
 
