@@ -14,5 +14,5 @@ Add this to your matrix services `docker-compose.yaml`:
       - "LEDGER_FILE=/ledger/finances.ledger"
       - "LEDGER_PRICE_DB=/ledger/price-db.ledger"
     volumes:
-      - /mnt/data/ledger:/ledger:ro # wherever your LEGER_FILE and/or LEDGER_PRICE_DB are located
+      - /mnt/data/ledger:/ledger:ro  # wherever your LEGER_FILE and/or LEDGER_PRICE_DB are located
 ```
