@@ -1,8 +1,5 @@
 # docker-compose:
 
-1. `cp config/ledger-registration.sample.yaml config/ledger-registration.yaml`
-2. edit `config/ledger-registration.yaml`
-
 Add this to your matrix services `docker-compose.yaml`:
 
 ```yaml
