@@ -4,7 +4,7 @@ Add this to your matrix services `docker-compose.yaml`:
 
 ```yaml
   appservice-ledger:
-    image: philrw/matrix-appservice-ledger
+    image: philrw/matrix-bot-ledger
     restart: unless-stopped
     environment:
       - "HOMESERVER=https://matrix.example.com"
