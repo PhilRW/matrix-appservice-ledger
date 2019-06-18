@@ -31,7 +31,7 @@ class MatrixBotLedger(threading.Thread):
             allowed_users: str,
             kill_event: threading.Event):
         super().__init__()
-        logger.debug("__init__()")
+        logger.debug(f"__init__({homeserver}, {username}, {password}, {allowed_users}, {kill_event})")
 
         self.allowed_users = allowed_users.split(',')
         self.homeserver = homeserver
@@ -61,6 +61,8 @@ class MatrixBotLedger(threading.Thread):
         self.client.logout()
 
     def connect(self):
+        logger.debug("connect()")
+
         if not self.kill_event.is_set():
             try:
                 self.client.login(username=self.username, password=self.password, limit=0)
@@ -71,26 +73,34 @@ class MatrixBotLedger(threading.Thread):
                 self.connect()
 
     def listener_exception_handler(self, e):
+        logger.debug(f"listener_exception_handler({e})")
+
         self.connect()
 
     def on_invite(self, room_id, state):
-        _sender = "someone"
-        for _event in state["events"]:
-            if _event["type"] != "m.room.join_rules":
+        logger.debug(f"on_invite({room_id}, {state}")
+
+        sender = "someone"
+        for event in state["events"]:
+            if event["type"] != "m.room.join_rules":
                 continue
-            _sender = _event["sender"]
+            sender = event["sender"]
             break
-        logger.info(f"invited to {room_id} by {_sender}")
-        if _sender not in self.allowed_users:
-            logger.info(f"no whitelist match, ignoring invite from {_sender}")
+
+        logger.info(f"Invited to {room_id} by {sender}.")
+
+        if sender not in self.allowed_users:
+            logger.info(f"no whitelist match, ignoring invite from {sender}")
             return
+
         self.join_room(room_id)
 
     def join_room(self, room_id):
-        logger.info(f"join_room({room_id})")
+        logger.debug(f"join_room({room_id})")
 
         room = self.client.join_room(room_id)
         room.add_listener(self.on_room_event)
+        logger.info(f"Joined room {room.display_name}.")
 
     # TODO: debug this
     def on_leave(self, room_id, state):
@@ -101,7 +111,7 @@ class MatrixBotLedger(threading.Thread):
             if not event["membership"]:
                 continue
             sender = event["sender"]
-        logger.info(f"kicked from {room_id} by {sender}")
+        logger.info(f"Kicked from {room_id} by {sender}.")
 
     def on_room_event(self, room: Room, event):
         logger.debug(f"on_room_event({room}, {event}")
@@ -116,7 +126,7 @@ class MatrixBotLedger(threading.Thread):
 
         if content_body.startswith('!echo '):
             message = content_body[6:]
-            logger.info(f"Echoing message '{message}' to room {room}")
+            logger.info(f"Echoing message '{message}' to room {room}.")
             body = message
         elif content_body.startswith('!sh '):
             body, html = self.run_local_command('!sh ', content_body)
@@ -127,6 +137,8 @@ class MatrixBotLedger(threading.Thread):
             self.safe_send_message(room, body, html)
 
     def run_local_command(self, prefix: str, command: str, keep_prefix: bool = False) -> tuple:
+        logger.debug(f"run_local_command({prefix}, {command}, {keep_prefix})")
+
         command = command[len(prefix):]
         body, html = None, None
         if keep_prefix:
@@ -144,6 +156,8 @@ class MatrixBotLedger(threading.Thread):
         return body, html
 
     def __sh(self, command) -> str:
+        logger.debug(f"__sh({command})")
+
         cmd = [
             "/bin/sh",
             "-c",
@@ -152,6 +166,8 @@ class MatrixBotLedger(threading.Thread):
         return subprocess.check_output(cmd, timeout=self.sh_timeout).decode()
 
     def safe_send_message(self, room: Room, body: str, html: str):
+        logger.debug(f"safe_send_message({room}, {body}, {html})")
+
         members = room.get_joined_members()
         logger.debug(f"room joined members: {members}")
         for u in members:
