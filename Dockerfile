@@ -14,9 +14,8 @@ RUN make install
 
 WORKDIR /app
 RUN apt-get install -y python3 python3-pip
-COPY install/requirements.txt .
-RUN pip3 install -r requirements.txt
 COPY app/ .
+RUN pip3 install -r requirements.txt
 
 VOLUME [ "/ledger" ]
 
